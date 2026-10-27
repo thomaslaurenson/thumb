@@ -237,7 +237,7 @@ func (e *Entry) Empty() bool {
 // Line returns the parsed line n, counting from one.
 func (e *Entry) Line(n int) (Line, error) {
 	if n < 1 || n > len(e.Lines) {
-		return Line{}, fmt.Errorf("line %d of %s: %w", n, e.Date, ErrNoLine)
+		return Line{}, fmt.Errorf("line %d of %q: %w", n, e.Date, ErrNoLine)
 	}
 	return ParseLine(e.Lines[n-1]), nil
 }
@@ -347,7 +347,7 @@ func (e *Entry) Insert(n int, s string) {
 // Set replaces line n.
 func (e *Entry) Set(n int, l Line) error {
 	if n < 1 || n > len(e.Lines) {
-		return fmt.Errorf("line %d of %s: %w", n, e.Date, ErrNoLine)
+		return fmt.Errorf("line %d of %q: %w", n, e.Date, ErrNoLine)
 	}
 	e.Lines[n-1] = l.String()
 	return nil
@@ -371,7 +371,7 @@ func (e *Entry) SetMarker(n int, m byte) error {
 // Delete removes line n.
 func (e *Entry) Delete(n int) error {
 	if n < 1 || n > len(e.Lines) {
-		return fmt.Errorf("line %d of %s: %w", n, e.Date, ErrNoLine)
+		return fmt.Errorf("line %d of %q: %w", n, e.Date, ErrNoLine)
 	}
 	e.Lines = append(e.Lines[:n-1], e.Lines[n:]...)
 	return nil

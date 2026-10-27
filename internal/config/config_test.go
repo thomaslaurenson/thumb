@@ -30,10 +30,10 @@ func TestParse(t *testing.T) {
 			in:   base + "base_url=https://x.example\ndescription=$(touch pwned)\n",
 			want: Config{Title: "T", Author: "A", Login: "l", BaseURL: "https://x.example", Description: "$(touch pwned)"},
 		},
-		{name: "unknown key", in: base + "base_url=https://x.example\ncolour=red\n", wantErr: ErrUnknownKey},
-		{name: "missing title", in: "author=A\nlogin=l\nbase_url=https://x.example\n", wantErr: ErrMissingKey},
-		{name: "bad url", in: base + "base_url=plan.example.com\n", wantErr: ErrBadURL},
-		{name: "bad line", in: "title=T\njust words\n", wantErr: ErrBadLine},
+		{name: "unknown key", in: base + "base_url=https://x.example\ncolour=red\n", wantErr: errUnknownKey},
+		{name: "missing title", in: "author=A\nlogin=l\nbase_url=https://x.example\n", wantErr: errMissingKey},
+		{name: "bad url", in: base + "base_url=plan.example.com\n", wantErr: errBadURL},
+		{name: "bad line", in: "title=T\njust words\n", wantErr: errBadLine},
 		{
 			name: "timezone",
 			in:   base + "base_url=https://x.example\ntimezone=Pacific/Auckland\n",
@@ -44,8 +44,8 @@ func TestParse(t *testing.T) {
 			in:   base + "base_url=https://x.example\ntimezone=\n",
 			want: Config{Title: "T", Author: "A", Login: "l", BaseURL: "https://x.example"},
 		},
-		{name: "unknown timezone", in: base + "base_url=https://x.example\ntimezone=Mars/Olympus\n", wantErr: ErrBadTimezone},
-		{name: "local is not a zone name", in: base + "base_url=https://x.example\ntimezone=Local\n", wantErr: ErrBadTimezone},
+		{name: "unknown timezone", in: base + "base_url=https://x.example\ntimezone=Mars/Olympus\n", wantErr: errBadTimezone},
+		{name: "local is not a zone name", in: base + "base_url=https://x.example\ntimezone=Local\n", wantErr: errBadTimezone},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -91,7 +91,7 @@ func TestToday(t *testing.T) {
 
 func TestTodayBadTimezone(t *testing.T) {
 	t.Parallel()
-	if _, err := (Config{Timezone: "Mars/Olympus"}).Today(time.Now()); !errors.Is(err, ErrBadTimezone) {
-		t.Errorf("Today error = %v, want %v", err, ErrBadTimezone)
+	if _, err := (Config{Timezone: "Mars/Olympus"}).Today(time.Now()); !errors.Is(err, errBadTimezone) {
+		t.Errorf("Today error = %v, want %v", err, errBadTimezone)
 	}
 }

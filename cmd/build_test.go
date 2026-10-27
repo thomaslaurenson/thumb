@@ -97,7 +97,7 @@ func TestBuild(t *testing.T) {
 			name:       "a failed check builds nothing",
 			files:      map[string]string{store.ProjectName: "lowercase keyword\n"},
 			args:       []string{"build"},
-			wantErr:    true,
+			errIs:      errCheckFailed,
 			wantErrOut: []string{"[!] "},
 			check: func(t *testing.T, root, _ string, _ error) {
 				assertAbsent(t, filepath.Join(root, "build"))

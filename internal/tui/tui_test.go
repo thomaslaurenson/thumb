@@ -1,7 +1,9 @@
 package tui
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -304,7 +306,7 @@ func TestTypingNothingLeavesNoTrace(t *testing.T) {
 		t.Errorf("view = %v archive rows = %d, want only the existing day", m.view, len(m.rows))
 	}
 	press(m, "Z", "Z")
-	if _, err := os.Stat(st.EntryPath(today)); !os.IsNotExist(err) {
+	if _, err := os.Stat(st.EntryPath(today)); !errors.Is(err, fs.ErrNotExist) {
 		t.Error("an abandoned line created today's file")
 	}
 }
@@ -611,7 +613,7 @@ func TestBrowsingCreatesNoFiles(t *testing.T) {
 	t.Parallel()
 	m, st := newTestModel(t, map[string]string{"plans/2026/2026-10-20.plan": "* x\n"})
 	press(m, "h", "l", "t", "ctrl+a", "2", "ctrl+b", "3", "Z", "Z")
-	if _, err := os.Stat(st.EntryPath(today)); !os.IsNotExist(err) {
+	if _, err := os.Stat(st.EntryPath(today)); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("quitting after browsing created %s", st.EntryPath(today))
 	}
 }

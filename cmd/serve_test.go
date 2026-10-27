@@ -95,7 +95,7 @@ func TestServe(t *testing.T) {
 			name:       "a failed check serves nothing",
 			files:      map[string]string{store.ProjectName: "lowercase keyword\n"},
 			args:       []string{"serve", "--port", "0"},
-			wantErr:    true,
+			errIs:      errCheckFailed,
 			wantErrOut: []string{"[!] "},
 		},
 		{

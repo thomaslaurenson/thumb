@@ -246,7 +246,7 @@ func Render(o Options) (map[string][]byte, error) {
 func execute(files map[string][]byte, path, name string, p page) error {
 	var b bytes.Buffer
 	if err := pages[name].ExecuteTemplate(&b, "base", p); err != nil {
-		return fmt.Errorf("render %s: %w", path, err)
+		return fmt.Errorf("render %q: %w", path, err)
 	}
 	files[path] = b.Bytes()
 	return nil
@@ -296,7 +296,7 @@ func renderAtom(o Options, newest []*entry.Entry, published map[string]bool) ([]
 	for _, e := range newest {
 		var b bytes.Buffer
 		if err := pages["entry"].ExecuteTemplate(&b, "body", blocks(e, o.Config.BaseURL+"/", published)); err != nil {
-			return nil, fmt.Errorf("render feed entry %s: %w", e.Date, err)
+			return nil, fmt.Errorf("render feed entry %q: %w", e.Date, err)
 		}
 		data.Entries = append(data.Entries, feedEntry{Date: e.Date, HTML: b.String()})
 	}
