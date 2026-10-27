@@ -4,7 +4,7 @@
 
 ![Release Version](https://img.shields.io/github/v/release/thomaslaurenson/thumb?style=flat&logo=github) ![Release downloads](https://img.shields.io/github/downloads/thomaslaurenson/thumb/total?style=flat&label=downloads&logo=github)
 
-![Go Version](https://img.shields.io/github/go-mod/go-version/thomaslaurenson/thumb?style=flat&logo=go) ![Code Coverage](https://img.shields.io/badge/Coverage-83.9%25-blue?style=flat&logo=go)
+![Go Version](https://img.shields.io/github/go-mod/go-version/thomaslaurenson/thumb?style=flat&logo=go) ![Code Coverage](https://img.shields.io/badge/Coverage-87.0%25-blue?style=flat&logo=go)
 
 Finger reads it, thumb writes it. `thumb` keeps a daily `.plan` file and a `project` list in the style of the 1990s finger plans, and publishes them as a small static site. It works in any terminal, including over SSH.
 
