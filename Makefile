@@ -6,7 +6,6 @@ VERSION   := $(shell git describe --tags --always --dirty --match 'v*' 2>/dev/nu
 GOIMPORTS := go run golang.org/x/tools/cmd/goimports@latest -local $(MODULE)
 
 ##@ BUILD
-
 .PHONY: help
 help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^##@ / {printf "\n%s\n", substr($$0, 5)} \
@@ -25,7 +24,6 @@ snapshot: ## Build snapshot binaries with goreleaser
 	goreleaser build --snapshot --clean
 
 ##@ TEST
-
 .PHONY: test
 test: ## Run the tests with the race detector
 	go test -race -count=1 ./...
@@ -41,7 +39,6 @@ test_coverage: ## Run the tests with a coverage report over internal/
 	rm coverage.out
 
 ##@ LINT
-
 .PHONY: format
 format: ## Format and group imports
 	$(GOIMPORTS) -w .
@@ -73,7 +70,6 @@ vuln: ## Scan for reachable vulnerabilities
 	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
 ##@ GET
-
 .PHONY: get_version
 get_version: ## Print the version build would stamp
 	@echo "$(VERSION)"
@@ -100,7 +96,6 @@ get_changelog: ## Print release notes for TAG to stdout (TAG=v1.0.0)
 	printf '%s\n' "$$notes"
 
 ##@ CI
-
 .PHONY: check_all
 check_all: check_format check_mod vet check_cross check_embed ## Run every static check
 
