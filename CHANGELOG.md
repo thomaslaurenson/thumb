@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.1 - 2026-10-28
+
+### Changed
+
+- Quote dates, paths and file names in error messages
+
+### Fixed
+
+- Report a failed save when the interface is interrupted
+
 ## 0.1.0 - 2026-10-28
 
 ### Added
