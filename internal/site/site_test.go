@@ -225,21 +225,25 @@ func TestDotPlan(t *testing.T) {
 	o := testOptions()
 	got := string(DotPlan(testConfig, o.Entries[3]))
 	lines := strings.Split(got, "\n")
-	checks := []struct {
+	tests := []struct {
+		name string
 		line int
 		want string
 	}{
-		{0, "Login: tester"},
-		{1, "Updated: 2026-10-24"},
-		{2, "Plan:"},
-		{4, "Test User's .plan for Oct 24, 2026"},
-		{5, "----------------------------------"},
-		{6, "* marker legend"},
+		{name: "login", line: 0, want: "Login: tester"},
+		{name: "updated", line: 1, want: "Updated: 2026-10-24"},
+		{name: "plan label", line: 2, want: "Plan:"},
+		{name: "entry heading", line: 4, want: "Test User's .plan for Oct 24, 2026"},
+		{name: "heading underline", line: 5, want: "----------------------------------"},
+		{name: "first entry line", line: 6, want: "* marker legend"},
 	}
-	for _, c := range checks {
-		if !strings.HasPrefix(lines[c.line], c.want) {
-			t.Errorf("line %d = %q, want prefix %q", c.line, lines[c.line], c.want)
-		}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			if !strings.HasPrefix(lines[tc.line], tc.want) {
+				t.Errorf("line %d = %q, want prefix %q", tc.line, lines[tc.line], tc.want)
+			}
+		})
 	}
 	if !strings.HasSuffix(got, "It holds up.\n") {
 		t.Errorf("trailing blank lines not trimmed: %q", got)
@@ -361,36 +365,41 @@ func TestRenderHoldsFutureEntries(t *testing.T) {
 		t.Error("an entry after today has a page")
 	}
 	tests := []struct {
+		name string
 		file string
 		want []string
 		not  []string
 	}{
 		{
+			name: "home counts only published entries",
 			file: "index.html",
 			want: []string{"<dt>Updated</dt><dd><time datetime=\"2026-10-20\">", "<dt>Plan</dt><dd>2 entries, 2 open</dd>"},
 			not:  []string{`href="2026-10-24/"`, "emoji set"},
 		},
-		{file: ".plan", want: []string{"Updated: 2026-10-20", "Test User's .plan for Oct 20, 2026"}},
-		{file: "atom.xml", want: []string{"<updated>2026-10-20T00:00:00Z</updated>"}, not: []string{"/2026-10-24/"}},
-		{file: "archive/index.html", not: []string{"2026-10-24"}},
+		{name: ".plan shows the last published day", file: ".plan", want: []string{"Updated: 2026-10-20", "Test User's .plan for Oct 20, 2026"}},
+		{name: "feed leaves out the held day", file: "atom.xml", want: []string{"<updated>2026-10-20T00:00:00Z</updated>"}, not: []string{"/2026-10-24/"}},
+		{name: "archive leaves out the held day", file: "archive/index.html", not: []string{"2026-10-24"}},
 		{
-			// The moved line still names its target, unlinked until that day has a page
+			name: "moved line names its target, unlinked until that day has a page",
 			file: "2026-10-20/index.html",
 			want: []string{`docs <small>moved to 2026-10-24</small>`},
 			not:  []string{`href="../2026-10-24/"`},
 		},
 	}
 	for _, tc := range tests {
-		body := files[tc.file]
-		for _, w := range tc.want {
-			if !strings.Contains(body, w) {
-				t.Errorf("%s lacks %q", tc.file, w)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			body := files[tc.file]
+			for _, w := range tc.want {
+				if !strings.Contains(body, w) {
+					t.Errorf("%s lacks %q", tc.file, w)
+				}
 			}
-		}
-		for _, n := range tc.not {
-			if strings.Contains(body, n) {
-				t.Errorf("%s contains %q", tc.file, n)
+			for _, n := range tc.not {
+				if strings.Contains(body, n) {
+					t.Errorf("%s contains %q", tc.file, n)
+				}
 			}
-		}
+		})
 	}
 }

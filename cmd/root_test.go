@@ -246,6 +246,15 @@ func TestRoot(t *testing.T) {
 			},
 		},
 		{
+			name: "bare thumb outside a repository",
+			setup: func(t *testing.T, env *Env, _ string) {
+				env.Dir = ""
+				outside := t.TempDir()
+				env.Getwd = func() (string, error) { return outside, nil }
+			},
+			errIs: store.ErrNoRoot,
+		},
+		{
 			name: "no repository above the working directory",
 			args: []string{"list"},
 			setup: func(t *testing.T, env *Env, _ string) {

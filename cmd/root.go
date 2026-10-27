@@ -166,7 +166,9 @@ func (a *App) runTUI(cmd *cobra.Command, _ []string) error {
 		Today: a.today(),
 		Now:   a.env.Now,
 		In:    a.env.In,
-		Out:   cmd.OutOrStdout(),
+		// The interface owns the terminal, so this is the one command that
+		// draws on stdout rather than writing an answer there
+		Out: cmd.OutOrStdout(),
 	})
 	// main exits 130 without a word on an interrupt, which would hide changes
 	// lost on the way out, so a failed save is reported here first
