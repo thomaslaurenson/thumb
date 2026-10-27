@@ -1,0 +1,33 @@
+name: Main
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/**"
+      - "**.go"
+      - go.mod
+      - go.sum
+      - Makefile
+      - "internal/site/templates/**"
+      - "internal/site/assets/**"
+      - ".goreleaser*.yml"
+      - .gpipe.yml
+
+concurrency:
+  group: main-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+  test:
+    uses: ./.github/workflows/test.yml
+  prerelease:
+    needs: [lint, test]
+    uses: ./.github/workflows/prerelease.yml
+    permissions:
+      contents: write

@@ -1,0 +1,62 @@
+{{define "base" -}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}}</title>
+<meta name="description" content="{{.Description}}">
+<meta name="author" content="{{.Site.Author}}">
+<meta name="generator" content="thumb {{.Version}}">
+{{- if .Canonical}}
+<link rel="canonical" href="{{.Canonical}}">
+<meta property="og:title" content="{{.Title}}">
+<meta property="og:description" content="{{.Description}}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{.Canonical}}">
+<meta property="og:site_name" content="{{.Site.Title}}">
+{{- else}}
+<meta name="robots" content="noindex">
+{{- end}}
+<link rel="alternate" type="application/atom+xml" title="{{.Site.Title}}" href="{{.Root}}atom.xml">
+<link rel="alternate" type="text/plain" title=".plan" href="{{.Root}}plan.txt">
+<link rel="icon" type="image/svg+xml" href="{{.Favicon}}">
+<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111111">
+<style>
+{{.CSS}}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<header>
+<a href="{{.Home}}">{{.Site.Title}}</a>
+<nav aria-label="Main navigation">
+<ul>
+<li><a href="{{.Home}}"{{if eq .Current "latest"}} aria-current="page"{{end}}>Latest</a></li>
+<li><a href="{{.Root}}archive/"{{if eq .Current "archive"}} aria-current="page"{{end}}>Archive</a></li>
+<li><a href="{{.Root}}markers/"{{if eq .Current "markers"}} aria-current="page"{{end}}>Markers</a></li>
+<li><a href="{{.Root}}atom.xml">Feed</a></li>
+</ul>
+</nav>
+<hr>
+</header>
+<main id="main-content">
+{{template "main" .}}
+</main>
+<hr>
+<footer>
+<small>Read it the old way: <code>curl {{.Site.BaseURL}}/.plan</code> - <a href="{{.Root}}plan.txt">plain text</a></small>
+</footer>
+</body>
+</html>
+{{end}}
+
+{{define "body" -}}
+{{range .}}{{if .List}}<ul class="plan">
+{{range .List}}<li data-status="{{.Status}}">{{.Text}}{{if .Target}} <small>moved to {{if .TargetHref}}<a href="{{.TargetHref}}">{{.Target}}</a>{{else}}{{.Target}}{{end}}</small>{{end}}</li>
+{{end}}</ul>
+{{else}}<p>{{range $i, $l := .Para}}{{if $i}}
+{{end}}{{$l}}{{end}}</p>
+{{end}}{{end}}
+{{- end}}

@@ -1,0 +1,24 @@
+{{define "main" -}}
+<nav aria-label="Breadcrumb">
+<ol>
+<li><a href="../">Latest</a></li>
+<li><a href="../archive/">Archive</a></li>
+<li><span aria-current="page">{{.Data.Date}}</span></li>
+</ol>
+</nav>
+<article>
+<h1><time datetime="{{.Data.Date}}">{{.Data.Date}}</time></h1>
+{{template "body" .Data.Body}}</article>
+{{- if or .Data.Older .Data.Newer}}
+<hr>
+<nav aria-label="Entry navigation">
+{{- with .Data.Older}}
+<a href="../{{.}}/">older - {{.}}</a>
+{{- end}}
+{{- if and .Data.Older .Data.Newer}} - {{end}}
+{{- with .Data.Newer}}
+<a href="../{{.}}/">newer - {{.}}</a>
+{{- end}}
+</nav>
+{{- end}}
+{{- end}}

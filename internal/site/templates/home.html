@@ -1,0 +1,34 @@
+{{define "main" -}}
+<h1>{{.Site.Title}}</h1>
+<dl class="finger">
+<dt>Login</dt><dd>{{.Site.Login}}</dd>
+<dt>Name</dt><dd>{{.Site.Author}}</dd>
+{{- with .Data.Latest}}
+<dt>Updated</dt><dd><time datetime="{{.Date}}">{{.Date}}</time></dd>
+{{- end}}
+<dt>Plan</dt><dd>{{.Data.Count}} {{if eq .Data.Count 1}}entry{{else}}entries{{end}}, {{len .Data.Open}} open</dd>
+</dl>
+{{- if .Data.Project}}
+<section aria-labelledby="project-heading">
+<h2 id="project-heading">Project</h2>
+<dl class="project">
+{{range .Data.Project}}<dt>{{.Keyword}}</dt><dd>{{.Text}}</dd>
+{{end}}</dl>
+</section>
+{{- end}}
+{{- if .Data.Open}}
+<section aria-labelledby="open-heading">
+<h2 id="open-heading">Open items</h2>
+<ul class="plan">
+{{range .Data.Open}}<li data-status="{{.Status}}">{{.Text}} <a href="{{.Date}}/">{{.Date}}</a></li>
+{{end}}</ul>
+</section>
+{{- end}}
+{{with .Data.Latest}}
+<article>
+<h2><a href="{{.Date}}/"><time datetime="{{.Date}}">{{.Date}}</time></a></h2>
+{{template "body" .Body}}</article>
+{{- else}}
+<p>No entries yet.</p>
+{{- end}}
+{{- end}}

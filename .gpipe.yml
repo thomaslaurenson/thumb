@@ -1,0 +1,18 @@
+binary: thumb
+
+platforms:
+  linux_amd64:
+    path: ./dist/thumb-linux-x86_64
+    name: thumb-linux-x86_64
+  linux_arm64:
+    path: ./dist/thumb-linux-aarch64
+    name: thumb-linux-aarch64
+  darwin_amd64:
+    path: ./dist/thumb-darwin-x86_64
+    name: thumb-darwin-x86_64
+  darwin_arm64:
+    path: ./dist/thumb-darwin-aarch64
+    name: thumb-darwin-aarch64
+  windows_amd64:
+    path: ./dist/thumb-windows-x86_64.exe
+    name: thumb-windows-x86_64.exe

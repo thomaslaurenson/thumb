@@ -1,0 +1,13 @@
+{{define "main" -}}
+<h1>Archive</h1>
+{{- range $i, $y := .Data.Years}}
+<details{{if eq $i 0}} open{{end}}>
+<summary>{{$y.Year}} ({{len $y.Rows}})</summary>
+<ul>
+{{range $y.Rows}}<li><a href="../{{.Date}}/"><time datetime="{{.Date}}">{{.Date}}</time></a> - {{.Tally}}{{with .Summary}} - {{.}}{{end}}</li>
+{{end}}</ul>
+</details>
+{{- else}}
+<p>No entries yet.</p>
+{{- end}}
+{{- end}}
