@@ -49,6 +49,8 @@ type Server struct {
 	changed chan struct{}
 }
 
+var _ http.Handler = (*Server)(nil)
+
 // New returns a server for files, keyed by their path in the site as
 // site.Render returns them.
 func New(files map[string][]byte) *Server {

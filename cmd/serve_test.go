@@ -25,6 +25,8 @@ type lockedBuffer struct {
 	b  bytes.Buffer
 }
 
+var _ io.Writer = (*lockedBuffer)(nil)
+
 func (l *lockedBuffer) Write(p []byte) (int, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()

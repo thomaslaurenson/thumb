@@ -53,7 +53,7 @@ func (a *App) serve(cmd *cobra.Command, port int) error {
 	if err != nil {
 		return err
 	}
-	r, err := a.render(cmd, st)
+	r, err := a.render(cmd.ErrOrStderr(), st)
 	if errors.Is(err, errCheckFailed) {
 		return fmt.Errorf("%w, nothing served", err)
 	}
@@ -75,7 +75,7 @@ func (a *App) serve(cmd *cobra.Command, port int) error {
 	served := make(chan error, 1)
 	go func() { served <- srv.Serve(ln) }()
 	fmt.Fprintf(cmd.ErrOrStderr(), "[*] Serving %s at http://%s/ (Ctrl-C to stop)\n", entries(r.published), ln.Addr())
-	r.reportHeld(cmd)
+	r.reportHeld(cmd.ErrOrStderr())
 
 	tick := time.NewTicker(pollInterval)
 	defer tick.Stop()
@@ -96,14 +96,14 @@ func (a *App) serve(cmd *cobra.Command, port int) error {
 			continue
 		}
 		stamp = now
-		r, err := a.render(cmd, st)
+		r, err := a.render(cmd.ErrOrStderr(), st)
 		if err != nil {
 			fmt.Fprintf(cmd.ErrOrStderr(), "[!] %v, still serving the last good site\n", err)
 			continue
 		}
 		if site.Set(r.files) {
 			fmt.Fprintf(cmd.ErrOrStderr(), "[~] Rebuilt %s\n", entries(r.published))
-			r.reportHeld(cmd)
+			r.reportHeld(cmd.ErrOrStderr())
 		}
 	}
 }
