@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -160,11 +161,18 @@ func (a *App) runTUI(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	return tui.Run(cmd.Context(), tui.Options{
+	err = tui.Run(cmd.Context(), tui.Options{
 		Store: st,
 		Today: a.today(),
 		Now:   a.env.Now,
 		In:    a.env.In,
 		Out:   cmd.OutOrStdout(),
 	})
+	// main exits 130 without a word on an interrupt, which would hide changes
+	// lost on the way out, so a failed save is reported here first
+	var se *tui.SaveError
+	if cmd.Context().Err() != nil && errors.As(err, &se) {
+		fmt.Fprintf(cmd.ErrOrStderr(), "[!] %v\n", se)
+	}
+	return err
 }

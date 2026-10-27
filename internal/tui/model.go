@@ -151,7 +151,17 @@ type model struct {
 	height int
 }
 
-// Run loads the repository and runs the interface until the user quits.
+// SaveError reports changes the interface could not save as it closed.
+type SaveError struct{ Err error }
+
+// Error says the save on exit failed, and why.
+func (e *SaveError) Error() string { return "save on exit: " + e.Err.Error() }
+
+// Unwrap returns the error the save failed with.
+func (e *SaveError) Unwrap() error { return e.Err }
+
+// Run loads the repository and runs the interface until the user quits. A
+// failed save as it closes is reported as a *SaveError.
 func Run(ctx context.Context, o Options) error {
 	m, err := newModel(o)
 	if err != nil {
@@ -172,7 +182,10 @@ func (m *model) saveOnExit() error {
 	if !m.unsaved() {
 		return nil
 	}
-	return m.save()
+	if err := m.save(); err != nil {
+		return &SaveError{Err: err}
+	}
+	return nil
 }
 
 func newModel(o Options) (*model, error) {

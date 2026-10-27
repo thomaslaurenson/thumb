@@ -863,6 +863,22 @@ func TestSaveOnExitKeepsUnsavedWork(t *testing.T) {
 	}
 }
 
+func TestSaveOnExitReportsAFailedSave(t *testing.T) {
+	t.Parallel()
+	m, st := newTestModel(t, map[string]string{})
+	press(m, "o")
+	typeText(m, "lost")
+	// A file where the plans folder belongs fails the save even for root,
+	// which a read-only folder would not
+	if err := os.WriteFile(st.PlansDir(), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var se *SaveError
+	if err := m.saveOnExit(); !errors.As(err, &se) {
+		t.Errorf("saveOnExit error = %v, want a *SaveError", err)
+	}
+}
+
 func TestHintKeysAreBound(t *testing.T) {
 	t.Parallel()
 	for hint, list := range map[string][]binding{normalHint: normalBindings(), migrateHint: migrateBindings()} {
