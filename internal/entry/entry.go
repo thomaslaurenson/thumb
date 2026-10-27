@@ -180,7 +180,7 @@ type Entry struct {
 	Date  string
 	Lines []string
 	// crlf records that the file used Windows line endings, so a save writes
-	// them back the same way.
+	// them back the same way
 	crlf bool
 }
 

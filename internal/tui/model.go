@@ -61,19 +61,19 @@ const (
 
 // insertState describes the line being typed in modeInsert.
 type insertState struct {
-	// date is the entry being typed in, or "" for the project file.
+	// date is the entry being typed in, or "" for the project file
 	date string
-	// line is the one-based line being typed.
+	// line is the one-based line being typed
 	line int
 	// fresh marks a line opened for this insert. Leaving it as it started
 	// removes it again rather than keeping an empty marker.
 	fresh   bool
 	prefill string
 	// continues makes enter open the next line below, in the day and project
-	// views; elsewhere enter just keeps the line.
+	// views; elsewhere enter just keeps the line
 	continues bool
 	// changed records whether the session has kept anything, so a session
-	// that changed nothing leaves no undo step behind.
+	// that changed nothing leaves no undo step behind
 	changed bool
 }
 
