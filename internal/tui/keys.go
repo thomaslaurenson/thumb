@@ -47,7 +47,7 @@ type binding struct {
 	desc    string
 	section section
 	// marker colours the label as that plan marker, so the marking rows double
-	// as the legend for the file format.
+	// as the legend for the file format
 	marker byte
 	run    func(m *model) tea.Cmd
 }
@@ -55,10 +55,10 @@ type binding struct {
 // keymap is a binding table indexed for dispatch.
 type keymap struct {
 	list []binding
-	// byTrigger maps a whole trigger to its index in list.
+	// byTrigger maps a whole trigger to its index in list
 	byTrigger map[string]int
 	// prefixes holds each leading part of a sequence, such as "d" for "d d",
-	// so the reader knows to wait for the next key.
+	// so the reader knows to wait for the next key
 	prefixes map[string]bool
 }
 

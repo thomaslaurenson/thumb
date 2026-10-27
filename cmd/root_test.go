@@ -186,6 +186,22 @@ func TestRoot(t *testing.T) {
 			wantOut: []string{testToday},
 		},
 		{
+			name:    "a relative --dir resolves against the working directory",
+			files:   seeded,
+			args:    []string{"--dir", ".", "list"},
+			setup:   noDir,
+			wantOut: []string{testToday},
+		},
+		{
+			name:  "a relative THUMB_DIR resolves against the working directory",
+			files: seeded,
+			args:  []string{"list"},
+			setup: func(_ *testing.T, env *Env, _ string) {
+				env.Dir = "."
+			},
+			wantOut: []string{testToday},
+		},
+		{
 			name:  "--dir wins over THUMB_DIR",
 			files: seeded,
 			args:  []string{"--dir", "{root}", "list"},
@@ -228,6 +244,15 @@ func TestRoot(t *testing.T) {
 			check: func(t *testing.T, root, _ string, _ error) {
 				assertAbsent(t, filepath.Join(root, "typo"))
 			},
+		},
+		{
+			name: "bare thumb outside a repository",
+			setup: func(t *testing.T, env *Env, _ string) {
+				env.Dir = ""
+				outside := t.TempDir()
+				env.Getwd = func() (string, error) { return outside, nil }
+			},
+			errIs: store.ErrNoRoot,
 		},
 		{
 			name: "no repository above the working directory",

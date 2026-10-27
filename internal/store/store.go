@@ -139,7 +139,7 @@ func (s *Store) Load(date string) (*entry.Entry, error) {
 		return entry.New(date), nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("read entry %s: %w", date, err)
+		return nil, fmt.Errorf("read entry %q: %w", date, err)
 	}
 	return entry.Parse(date, data), nil
 }

@@ -1,7 +1,9 @@
 package tui
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -178,11 +180,20 @@ func TestSpaceMarksDoneByDate(t *testing.T) {
 
 func TestMovedLineKeepsItsMarker(t *testing.T) {
 	t.Parallel()
-	for _, keys := range [][]string{{"space"}, {"r", "-"}, {"r", "*"}, {"r", "~"}} {
-		t.Run(strings.Join(keys, ""), func(t *testing.T) {
+	tests := []struct {
+		name string
+		keys []string
+	}{
+		{name: "space", keys: []string{"space"}},
+		{name: "r-", keys: []string{"r", "-"}},
+		{name: "r*", keys: []string{"r", "*"}},
+		{name: "r~", keys: []string{"r", "~"}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			m, _ := newTestModel(t, map[string]string{"plans/2026/2026-10-25.plan": "> carry -> 2026-10-26\n"})
-			press(m, keys...)
+			press(m, tc.keys...)
 			if got := m.entries[today].Lines[0]; got != "> carry -> 2026-10-26" {
 				t.Errorf("line = %q, want the moved line kept with its target", got)
 			}
@@ -304,7 +315,7 @@ func TestTypingNothingLeavesNoTrace(t *testing.T) {
 		t.Errorf("view = %v archive rows = %d, want only the existing day", m.view, len(m.rows))
 	}
 	press(m, "Z", "Z")
-	if _, err := os.Stat(st.EntryPath(today)); !os.IsNotExist(err) {
+	if _, err := os.Stat(st.EntryPath(today)); !errors.Is(err, fs.ErrNotExist) {
 		t.Error("an abandoned line created today's file")
 	}
 }
@@ -553,12 +564,19 @@ func TestProjectView(t *testing.T) {
 
 func TestProjectLineEscThrowsAwayWhatCannotBeKept(t *testing.T) {
 	t.Parallel()
-	for _, keys := range [][]string{{"o"}, {"A"}} {
-		t.Run(keys[0], func(t *testing.T) {
+	tests := []struct {
+		name string
+		key  string
+	}{
+		{name: "a new line", key: "o"},
+		{name: "an edited line", key: "A"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			m, _ := newTestModel(t, map[string]string{"project": "BUILDING thumb\n"})
 			press(m, "ctrl+b", "4")
-			press(m, keys...)
+			press(m, tc.key)
 			press(m, "ctrl+u")
 			typeText(m, "lowercase bad")
 			press(m, "esc")
@@ -611,7 +629,7 @@ func TestBrowsingCreatesNoFiles(t *testing.T) {
 	t.Parallel()
 	m, st := newTestModel(t, map[string]string{"plans/2026/2026-10-20.plan": "* x\n"})
 	press(m, "h", "l", "t", "ctrl+a", "2", "ctrl+b", "3", "Z", "Z")
-	if _, err := os.Stat(st.EntryPath(today)); !os.IsNotExist(err) {
+	if _, err := os.Stat(st.EntryPath(today)); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("quitting after browsing created %s", st.EntryPath(today))
 	}
 }
@@ -709,9 +727,17 @@ var styleCode = regexp.MustCompile("\x1b\\[[0-9;:]*m")
 
 func TestKeysScreen(t *testing.T) {
 	t.Parallel()
-	for _, width := range []int{200, 60} {
-		t.Run(fmt.Sprintf("width %d", width), func(t *testing.T) {
+	tests := []struct {
+		name  string
+		width int
+	}{
+		{name: "two columns", width: 200},
+		{name: "one column", width: 60},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			width := tc.width
 			m, _ := newTestModel(t, map[string]string{})
 			m.Update(tea.WindowSizeMsg{Width: width, Height: 30})
 			screen := styleCode.ReplaceAllString(strings.Join(m.helpLines(), "\n"), "")
@@ -760,33 +786,52 @@ func TestKeysScreenScrollsAndCloses(t *testing.T) {
 
 func TestEveryTriggerIsBoundOnce(t *testing.T) {
 	t.Parallel()
-	for name, list := range map[string][]binding{"normal": normalBindings(), "insert": insertBindings(), "migrate": migrateBindings()} {
-		seen := map[string]bool{}
-		for _, b := range list {
-			if b.run == nil {
-				t.Errorf("%s: %v has no action", name, b.triggers)
-			}
-			for _, tr := range b.triggers {
-				if seen[tr] {
-					t.Errorf("%s: %q is bound twice", name, tr)
+	tests := []struct {
+		name string
+		list []binding
+	}{
+		{name: "normal", list: normalBindings()},
+		{name: "insert", list: insertBindings()},
+		{name: "migrate", list: migrateBindings()},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			seen := map[string]bool{}
+			for _, b := range tc.list {
+				if b.run == nil {
+					t.Errorf("%v has no action", b.triggers)
 				}
-				seen[tr] = true
+				for _, tr := range b.triggers {
+					if seen[tr] {
+						t.Errorf("%q is bound twice", tr)
+					}
+					seen[tr] = true
+				}
 			}
-		}
-		k := newKeymap(list)
-		for p := range k.prefixes {
-			if _, ok := k.byTrigger[p]; ok {
-				t.Errorf("%s: %q is both a key and the start of a sequence, so it could never run", name, p)
+			k := newKeymap(tc.list)
+			for p := range k.prefixes {
+				if _, ok := k.byTrigger[p]; ok {
+					t.Errorf("%q is both a key and the start of a sequence, so it could never run", p)
+				}
 			}
-		}
+		})
 	}
 }
 
 func TestViewKeys(t *testing.T) {
 	t.Parallel()
-	for _, prefix := range []string{"ctrl+a", "ctrl+b"} {
-		t.Run(prefix, func(t *testing.T) {
+	tests := []struct {
+		name   string
+		prefix string
+	}{
+		{name: "ctrl+a as in screen", prefix: "ctrl+a"},
+		{name: "ctrl+b as in tmux", prefix: "ctrl+b"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			prefix := tc.prefix
 			m, _ := newTestModel(t, map[string]string{"plans/2026/2026-10-25.plan": "* x\n"})
 			for _, want := range []viewKind{viewOpen, viewArchive, viewProject, viewDay} {
 				press(m, prefix, "n")
@@ -826,13 +871,20 @@ func TestCtrlAWhileTypingStaysInTheLine(t *testing.T) {
 
 func TestQuitKeysSave(t *testing.T) {
 	t.Parallel()
-	for _, keys := range [][]string{{"Z", "Z"}, {"ctrl+c"}} {
-		t.Run(strings.Join(keys, ""), func(t *testing.T) {
+	tests := []struct {
+		name string
+		keys []string
+	}{
+		{name: "ZZ", keys: []string{"Z", "Z"}},
+		{name: "ctrl+c", keys: []string{"ctrl+c"}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			m, st := newTestModel(t, map[string]string{"plans/2026/2026-10-25.plan": "- thing\n"})
 			press(m, "space")
 			var cmd tea.Cmd
-			for _, k := range keys {
+			for _, k := range tc.keys {
 				_, cmd = m.Update(keyMsg(k))
 			}
 			if cmd == nil {
@@ -861,19 +913,46 @@ func TestSaveOnExitKeepsUnsavedWork(t *testing.T) {
 	}
 }
 
+func TestSaveOnExitReportsAFailedSave(t *testing.T) {
+	t.Parallel()
+	m, st := newTestModel(t, map[string]string{})
+	press(m, "o")
+	typeText(m, "lost")
+	// A file where the plans folder belongs fails the save even for root,
+	// which a read-only folder would not
+	if err := os.WriteFile(st.PlansDir(), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var se *SaveError
+	if err := m.saveOnExit(); !errors.As(err, &se) {
+		t.Errorf("saveOnExit error = %v, want a *SaveError", err)
+	}
+}
+
 func TestHintKeysAreBound(t *testing.T) {
 	t.Parallel()
-	for hint, list := range map[string][]binding{normalHint: normalBindings(), migrateHint: migrateBindings()} {
-		k := newKeymap(list)
-		for _, pair := range strings.Split(hint, "  ") {
-			key := strings.Fields(pair)[0]
-			// A sequence such as dd is written run together in the hint
-			_, whole := k.byTrigger[key]
-			_, spelled := k.byTrigger[strings.Join(strings.Split(key, ""), " ")]
-			if !whole && !spelled && !k.prefixes[key] {
-				t.Errorf("the hint %q names %q, which is not bound", hint, key)
+	tests := []struct {
+		name string
+		hint string
+		list []binding
+	}{
+		{name: "browsing", hint: normalHint, list: normalBindings()},
+		{name: "migrate picker", hint: migrateHint, list: migrateBindings()},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			k := newKeymap(tc.list)
+			for _, pair := range strings.Split(tc.hint, "  ") {
+				key := strings.Fields(pair)[0]
+				// A sequence such as dd is written run together in the hint
+				_, whole := k.byTrigger[key]
+				_, spelled := k.byTrigger[strings.Join(strings.Split(key, ""), " ")]
+				if !whole && !spelled && !k.prefixes[key] {
+					t.Errorf("the hint names %q, which is not bound", key)
+				}
 			}
-		}
+		})
 	}
 }
 

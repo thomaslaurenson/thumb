@@ -185,7 +185,7 @@ func (a *App) newRemarkCmd(name, short string) *cobra.Command {
 				return err
 			}
 			if !st.Exists(ref.Date) {
-				return fmt.Errorf("no entry for %s", ref.Date)
+				return fmt.Errorf("no entry for %q", ref.Date)
 			}
 			e, err := st.Load(ref.Date)
 			if err != nil {
@@ -232,7 +232,7 @@ func (a *App) newMigrateCmd() *cobra.Command {
 				return err
 			}
 			if !st.Exists(ref.Date) {
-				return fmt.Errorf("no entry for %s", ref.Date)
+				return fmt.Errorf("no entry for %q", ref.Date)
 			}
 			from, err := st.Load(ref.Date)
 			if err != nil {
@@ -309,7 +309,7 @@ func (a *App) newShowCmd() *cobra.Command {
 					return err
 				}
 				if !st.Exists(date) {
-					return fmt.Errorf("no entry for %s", date)
+					return fmt.Errorf("no entry for %q", date)
 				}
 				if e, err = st.Load(date); err != nil {
 					return err

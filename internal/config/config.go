@@ -15,16 +15,16 @@ import (
 )
 
 var (
-	// ErrBadLine reports a line that is not key=value.
-	ErrBadLine = errors.New("expected key=value")
-	// ErrUnknownKey reports a key thumb does not use.
-	ErrUnknownKey = errors.New("unknown key")
-	// ErrMissingKey reports a required key that is absent or empty.
-	ErrMissingKey = errors.New("required key missing")
-	// ErrBadURL reports a base_url that is not an http or https URL.
-	ErrBadURL = errors.New("base_url must be an http or https URL")
-	// ErrBadTimezone reports a timezone that is not an IANA zone name.
-	ErrBadTimezone = errors.New("timezone must be an IANA name such as Pacific/Auckland")
+	// errBadLine reports a line that is not key=value.
+	errBadLine = errors.New("expected key=value")
+	// errUnknownKey reports a key thumb does not use.
+	errUnknownKey = errors.New("unknown key")
+	// errMissingKey reports a required key that is absent or empty.
+	errMissingKey = errors.New("required key missing")
+	// errBadURL reports a base_url that is not an http or https URL.
+	errBadURL = errors.New("base_url must be an http or https URL")
+	// errBadTimezone reports a timezone that is not an IANA zone name.
+	errBadTimezone = errors.New("timezone must be an IANA name such as Pacific/Auckland")
 )
 
 // dateLayout is the YYYY-MM-DD form entry dates take.
@@ -66,11 +66,11 @@ func (c Config) Today(now time.Time) (string, error) {
 // here: either would quietly move the author's day to the build machine's.
 func loadLocation(name string) (*time.Location, error) {
 	if name == "" || name == "Local" {
-		return nil, fmt.Errorf("%q: %w", name, ErrBadTimezone)
+		return nil, fmt.Errorf("%q: %w", name, errBadTimezone)
 	}
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		return nil, fmt.Errorf("%q: %w", name, ErrBadTimezone)
+		return nil, fmt.Errorf("%q: %w", name, errBadTimezone)
 	}
 	return loc, nil
 }
@@ -102,7 +102,7 @@ func Parse(data []byte) (Config, error) {
 		}
 		key, value, ok := strings.Cut(line, "=")
 		if !ok {
-			return Config{}, fmt.Errorf("line %d: %w", n, ErrBadLine)
+			return Config{}, fmt.Errorf("line %d: %w", n, errBadLine)
 		}
 		switch key {
 		case "title":
@@ -125,7 +125,7 @@ func Parse(data []byte) (Config, error) {
 			}
 			c.Timezone = value
 		default:
-			return Config{}, fmt.Errorf("line %d: %w: %q", n, ErrUnknownKey, key)
+			return Config{}, fmt.Errorf("line %d: %w: %q", n, errUnknownKey, key)
 		}
 	}
 	if err := sc.Err(); err != nil {
@@ -135,11 +135,11 @@ func Parse(data []byte) (Config, error) {
 		{"title", c.Title}, {"author", c.Author}, {"login", c.Login},
 	} {
 		if f.value == "" {
-			return Config{}, fmt.Errorf("%w: %s", ErrMissingKey, f.key)
+			return Config{}, fmt.Errorf("%w: %q", errMissingKey, f.key)
 		}
 	}
 	if !urlPattern.MatchString(c.BaseURL) {
-		return Config{}, ErrBadURL
+		return Config{}, errBadURL
 	}
 	return c, nil
 }

@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -92,18 +93,10 @@ func NewRootCmd(out, errw io.Writer, env Env) *cobra.Command {
 // --dir or THUMB_DIR must hold a thumb.conf itself.
 func (a *App) store() (*store.Store, error) {
 	if a.dir != "" {
-		st, err := store.Open(a.dir)
-		if err != nil {
-			return nil, fmt.Errorf("--dir %w", err)
-		}
-		return st, nil
+		return a.open("--dir", a.dir)
 	}
 	if a.env.Dir != "" {
-		st, err := store.Open(a.env.Dir)
-		if err != nil {
-			return nil, fmt.Errorf("THUMB_DIR %w", err)
-		}
-		return st, nil
+		return a.open("THUMB_DIR", a.env.Dir)
 	}
 	wd, err := a.env.Getwd()
 	if err != nil {
@@ -114,6 +107,20 @@ func (a *App) store() (*store.Store, error) {
 		return nil, fmt.Errorf("%w; run thumb inside your plans repository or set THUMB_DIR", err)
 	}
 	return store.New(root), nil
+}
+
+// open opens the repository that setting names, resolving a relative dir
+// against the working directory Env reports.
+func (a *App) open(setting, dir string) (*store.Store, error) {
+	dir, err := a.abs(dir)
+	if err != nil {
+		return nil, err
+	}
+	st, err := store.Open(dir)
+	if err != nil {
+		return nil, fmt.Errorf("%s %w", setting, err)
+	}
+	return st, nil
 }
 
 // abs resolves path against the working directory Env reports, rather than
@@ -154,11 +161,20 @@ func (a *App) runTUI(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	return tui.Run(cmd.Context(), tui.Options{
+	err = tui.Run(cmd.Context(), tui.Options{
 		Store: st,
 		Today: a.today(),
 		Now:   a.env.Now,
 		In:    a.env.In,
-		Out:   cmd.OutOrStdout(),
+		// The interface owns the terminal, so this is the one command that
+		// draws on stdout rather than writing an answer there
+		Out: cmd.OutOrStdout(),
 	})
+	// main exits 130 without a word on an interrupt, which would hide changes
+	// lost on the way out, so a failed save is reported here first
+	var se *tui.SaveError
+	if cmd.Context().Err() != nil && errors.As(err, &se) {
+		fmt.Fprintf(cmd.ErrOrStderr(), "[!] %v\n", se)
+	}
+	return err
 }

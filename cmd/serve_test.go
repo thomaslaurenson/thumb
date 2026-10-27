@@ -25,6 +25,8 @@ type lockedBuffer struct {
 	b  bytes.Buffer
 }
 
+var _ io.Writer = (*lockedBuffer)(nil)
+
 func (l *lockedBuffer) Write(p []byte) (int, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -65,17 +67,17 @@ func get(t *testing.T, url string) string {
 	return string(b)
 }
 
-// startServe runs thumb with args against root in the background. The
-// returned stop cancels it and returns its error, and also runs when the test
-// ends, so a failing test never leaves the server running.
-func startServe(t *testing.T, root string, errOut io.Writer, args ...string) (stop func() error) {
+// startServe runs thumb with args against root in the background, writing to
+// out and errOut. The returned stop cancels it and returns its error, and also
+// runs when the test ends, so a failing test never leaves the server running.
+func startServe(t *testing.T, root string, out, errOut io.Writer, args ...string) (stop func() error) {
 	t.Helper()
 	env := Env{
 		Dir:   root,
 		Getwd: func() (string, error) { return root, nil },
 		Now:   func() time.Time { return testNow },
 	}
-	c := NewRootCmd(io.Discard, errOut, env)
+	c := NewRootCmd(out, errOut, env)
 	c.SetArgs(args)
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
 	done := make(chan error, 1)
@@ -95,7 +97,7 @@ func TestServe(t *testing.T) {
 			name:       "a failed check serves nothing",
 			files:      map[string]string{store.ProjectName: "lowercase keyword\n"},
 			args:       []string{"serve", "--port", "0"},
-			wantErr:    true,
+			errIs:      errCheckFailed,
 			wantErrOut: []string{"[!] "},
 		},
 		{
@@ -114,17 +116,21 @@ func TestServePortInUse(t *testing.T) {
 	}
 	defer ln.Close()
 	port := strconv.Itoa(ln.Addr().(*net.TCPAddr).Port)
-	stop := startServe(t, newRoot(t, nil), io.Discard, "serve", "--port", port)
+	var out lockedBuffer
+	stop := startServe(t, newRoot(t, nil), &out, io.Discard, "serve", "--port", port)
 	if err := stop(); err == nil || errors.Is(err, context.Canceled) {
 		t.Errorf("error = %v, want the port in use reported", err)
+	}
+	if got := out.String(); got != "" {
+		t.Errorf("failed but wrote %q to stdout", got)
 	}
 }
 
 func TestServeRebuildsOnSave(t *testing.T) {
 	t.Parallel()
 	root := newRoot(t, map[string]string{entryPath(testToday): "* first\n"})
-	var errOut lockedBuffer
-	stop := startServe(t, root, &errOut, "serve", "--port", "0")
+	var out, errOut lockedBuffer
+	stop := startServe(t, root, &out, &errOut, "serve", "--port", "0")
 
 	var base string
 	eventually(t, "the serving line", func() bool {
@@ -156,5 +162,8 @@ func TestServeRebuildsOnSave(t *testing.T) {
 
 	if err := stop(); !errors.Is(err, context.Canceled) {
 		t.Errorf("error = %v, want context.Canceled so main exits as interrupted", err)
+	}
+	if got := out.String(); got != "" {
+		t.Errorf("stdout = %q, want serve to report on stderr only", got)
 	}
 }

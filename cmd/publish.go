@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -12,9 +13,9 @@ import (
 	"github.com/thomaslaurenson/thumb/internal/store"
 )
 
-// check prints every problem Check finds and reports whether any was an
-// error, and how many entries it read.
-func check(cmd *cobra.Command, st *store.Store) (failed bool, entries int, err error) {
+// check prints every problem Check finds to errw and reports whether any was
+// an error, and how many entries it read.
+func check(errw io.Writer, st *store.Store) (failed bool, entries int, err error) {
 	r, err := st.Check()
 	if err != nil {
 		return false, 0, err
@@ -24,7 +25,7 @@ func check(cmd *cobra.Command, st *store.Store) (failed bool, entries int, err e
 		if p.Fatal {
 			kind = "error"
 		}
-		fmt.Fprintf(cmd.ErrOrStderr(), "[!] %s: %s: %s\n", p.Path, kind, p.Message)
+		fmt.Fprintf(errw, "[!] %s: %s: %s\n", p.Path, kind, p.Message)
 	}
 	return r.Failed(), r.Entries, nil
 }
@@ -39,7 +40,7 @@ func (a *App) newCheckCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			failed, n, err := check(cmd, st)
+			failed, n, err := check(cmd.ErrOrStderr(), st)
 			if err != nil {
 				return err
 			}
@@ -80,7 +81,7 @@ func (a *App) newBuildCmd() *cobra.Command {
 					return fmt.Errorf("refusing to build into %q", out)
 				}
 			}
-			r, err := a.render(cmd, st)
+			r, err := a.render(cmd.ErrOrStderr(), st)
 			if errors.Is(err, errCheckFailed) {
 				return fmt.Errorf("%w, nothing built", err)
 			}
@@ -91,7 +92,7 @@ func (a *App) newBuildCmd() *cobra.Command {
 				return err
 			}
 			fmt.Fprintf(cmd.ErrOrStderr(), "[*] Built %s into %s\n", entries(r.published), out)
-			r.reportHeld(cmd)
+			r.reportHeld(cmd.ErrOrStderr())
 			return nil
 		},
 	}
@@ -110,10 +111,10 @@ type rendered struct {
 	today           string
 }
 
-// render checks the repository, printing any problems, then renders its site
-// as of the author's today.
-func (a *App) render(cmd *cobra.Command, st *store.Store) (rendered, error) {
-	failed, _, err := check(cmd, st)
+// render checks the repository, printing any problems to errw, then renders
+// its site as of the author's today.
+func (a *App) render(errw io.Writer, st *store.Store) (rendered, error) {
+	failed, _, err := check(errw, st)
 	if err != nil {
 		return rendered{}, err
 	}
@@ -144,11 +145,11 @@ func (a *App) render(cmd *cobra.Command, st *store.Store) (rendered, error) {
 	return rendered{files: files, published: len(published), held: len(held), today: today}, nil
 }
 
-// reportHeld says how many entries the site leaves out for being dated after
-// today, if any.
-func (r rendered) reportHeld(cmd *cobra.Command) {
+// reportHeld tells errw how many entries the site leaves out for being dated
+// after today, if any.
+func (r rendered) reportHeld(errw io.Writer) {
 	if r.held > 0 {
-		fmt.Fprintf(cmd.ErrOrStderr(), "[*] Held back %s dated after %s\n", entries(r.held), r.today)
+		fmt.Fprintf(errw, "[*] Held back %s dated after %s\n", entries(r.held), r.today)
 	}
 }
 
@@ -162,7 +163,7 @@ func (a *App) newSyncCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			failed, _, err := check(cmd, st)
+			failed, _, err := check(cmd.ErrOrStderr(), st)
 			if err != nil {
 				return err
 			}

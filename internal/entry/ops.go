@@ -31,10 +31,10 @@ func (e *Entry) remark(n int, m byte, allowed string) error {
 		return err
 	}
 	if !l.IsPlan() {
-		return fmt.Errorf("line %d of %s: %w", n, e.Date, ErrNotPlanLine)
+		return fmt.Errorf("line %d of %q: %w", n, e.Date, ErrNotPlanLine)
 	}
 	if !strings.ContainsRune(allowed, rune(l.Marker)) {
-		return fmt.Errorf("line %d of %s is %q, need one of %q: %w", n, e.Date, l.Marker, allowed, ErrWrongMarker)
+		return fmt.Errorf("line %d of %q is %q, need one of %q: %w", n, e.Date, l.Marker, allowed, ErrWrongMarker)
 	}
 	return e.SetMarker(n, m)
 }
@@ -44,17 +44,17 @@ func (e *Entry) remark(n int, m byte, allowed string) error {
 // the original marker is appended to to.
 func Migrate(from *Entry, n int, to *Entry) error {
 	if from.Date == to.Date {
-		return fmt.Errorf("line %d of %s: %w", n, from.Date, ErrSameDay)
+		return fmt.Errorf("line %d of %q: %w", n, from.Date, ErrSameDay)
 	}
 	l, err := from.Line(n)
 	if err != nil {
 		return err
 	}
 	if !l.IsPlan() {
-		return fmt.Errorf("line %d of %s: %w", n, from.Date, ErrNotPlanLine)
+		return fmt.Errorf("line %d of %q: %w", n, from.Date, ErrNotPlanLine)
 	}
 	if !IsOpen(l.Marker) && l.Marker != Idea {
-		return fmt.Errorf("line %d of %s is %q, need an open item or idea: %w", n, from.Date, l.Marker, ErrWrongMarker)
+		return fmt.Errorf("line %d of %q is %q, need an open item or idea: %w", n, from.Date, l.Marker, ErrWrongMarker)
 	}
 	to.Append(Line{Marker: l.Marker, Text: l.Text})
 	return from.Set(n, Line{Marker: Moved, Text: l.Text, Target: to.Date})

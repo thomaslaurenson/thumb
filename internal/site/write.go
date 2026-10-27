@@ -46,10 +46,10 @@ func Write(out string, files map[string][]byte) (err error) {
 	for name, data := range files {
 		path := filepath.Join(tmp, filepath.FromSlash(name))
 		if err = os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			return fmt.Errorf("write %s: %w", name, err)
+			return fmt.Errorf("write %q: %w", name, err)
 		}
 		if err = os.WriteFile(path, data, 0o644); err != nil {
-			return fmt.Errorf("write %s: %w", name, err)
+			return fmt.Errorf("write %q: %w", name, err)
 		}
 	}
 	if err = os.RemoveAll(out); err != nil {

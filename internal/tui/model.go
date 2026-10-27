@@ -61,19 +61,19 @@ const (
 
 // insertState describes the line being typed in modeInsert.
 type insertState struct {
-	// date is the entry being typed in, or "" for the project file.
+	// date is the entry being typed in, or "" for the project file
 	date string
-	// line is the one-based line being typed.
+	// line is the one-based line being typed
 	line int
 	// fresh marks a line opened for this insert. Leaving it as it started
 	// removes it again rather than keeping an empty marker.
 	fresh   bool
 	prefill string
 	// continues makes enter open the next line below, in the day and project
-	// views; elsewhere enter just keeps the line.
+	// views; elsewhere enter just keeps the line
 	continues bool
 	// changed records whether the session has kept anything, so a session
-	// that changed nothing leaves no undo step behind.
+	// that changed nothing leaves no undo step behind
 	changed bool
 }
 
@@ -151,7 +151,17 @@ type model struct {
 	height int
 }
 
-// Run loads the repository and runs the interface until the user quits.
+// SaveError reports changes the interface could not save as it closed.
+type SaveError struct{ Err error }
+
+// Error says the save on exit failed, and why.
+func (e *SaveError) Error() string { return "save on exit: " + e.Err.Error() }
+
+// Unwrap returns the error the save failed with.
+func (e *SaveError) Unwrap() error { return e.Err }
+
+// Run loads the repository and runs the interface until the user quits. A
+// failed save as it closes is reported as a *SaveError.
 func Run(ctx context.Context, o Options) error {
 	m, err := newModel(o)
 	if err != nil {
@@ -172,7 +182,10 @@ func (m *model) saveOnExit() error {
 	if !m.unsaved() {
 		return nil
 	}
-	return m.save()
+	if err := m.save(); err != nil {
+		return &SaveError{Err: err}
+	}
+	return nil
 }
 
 func newModel(o Options) (*model, error) {
