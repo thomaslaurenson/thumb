@@ -186,6 +186,22 @@ func TestRoot(t *testing.T) {
 			wantOut: []string{testToday},
 		},
 		{
+			name:    "a relative --dir resolves against the working directory",
+			files:   seeded,
+			args:    []string{"--dir", ".", "list"},
+			setup:   noDir,
+			wantOut: []string{testToday},
+		},
+		{
+			name:  "a relative THUMB_DIR resolves against the working directory",
+			files: seeded,
+			args:  []string{"list"},
+			setup: func(_ *testing.T, env *Env, _ string) {
+				env.Dir = "."
+			},
+			wantOut: []string{testToday},
+		},
+		{
 			name:  "--dir wins over THUMB_DIR",
 			files: seeded,
 			args:  []string{"--dir", "{root}", "list"},
